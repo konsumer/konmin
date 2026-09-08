@@ -10,7 +10,7 @@ konmin is not on an app store. You install it directly.
 
 **Obtainium (easiest, auto-updates):** install [Obtainium](https://github.com/ImranR98/Obtainium), then Add App with this URL: `https://github.com/konsumer/konmin`. It installs the latest APK and keeps it updated.
 
-**Manual:** download `app-debug.apk` from the [latest release](https://github.com/konsumer/konmin/releases/latest), open the file, allow installing from that source, and tap Install.
+**Manual:** download the release APK from the [latest release](https://github.com/konsumer/konmin/releases/latest), open the file, allow installing from that source, and tap Install.
 
 First launch: press the Home button, pick konmin, and tap Always. konmin becomes your default launcher.
 

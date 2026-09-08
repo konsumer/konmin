@@ -29,8 +29,12 @@ android {
         applicationId = "com.konsumer.konmin"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        // Version is overridable via env vars so CI stamps the build from the
+        // release git tag (VERSION_CODE / VERSION_NAME, set by the release
+        // workflow). A normal local build without them falls back to the
+        // defaults below. Local builds (no env vars) stay at 1 / 0.1.0.
+        versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
+        versionName = System.getenv("VERSION_NAME") ?: "0.1.0"
     }
 
     buildFeatures {
@@ -62,6 +66,21 @@ android {
             if (hasReleaseKey) {
                 signingConfig = signingConfigs.getByName("release")
             }
+        }
+    }
+
+    // Name every built APK konmin-<versionName>-<buildType>.apk, e.g.
+    // konmin-0.1.0-debug.apk / konmin-0.1.0-release.apk (the unsigned release
+    // artifact gets no "-unsigned" suffix either). versionName comes from
+    // defaultConfig, so CI-stamped tags and the 0.1.0 local fallback both flow
+    // through. AGP 8.7's new variant API no longer exposes output file naming
+    // (VariantOutput.outputFileName is gone), so the legacy applicationVariants
+    // DSL is used; it still works on AGP 8.x and is removed only in AGP 9.
+    applicationVariants.all {
+        val variantName = name
+        outputs.all {
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
+                "konmin-${android.defaultConfig.versionName}-$variantName.apk"
         }
     }
 }

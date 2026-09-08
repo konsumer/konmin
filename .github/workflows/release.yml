@@ -1,5 +1,8 @@
 # Release build workflow
 #
+# versionCode/versionName are stamped automatically from the release git tag
+# (vMAJOR.MINOR.PATCH). See the "Compute version from tag" step.
+#
 # Runs when a GitHub Release is published: the APK is built from the release
 # tag and auto-attached to that release.
 #
@@ -60,6 +63,32 @@ jobs:
           echo "(e.g. v0.1.0) so the workflow can attach the rebuilt APK to it."
           exit 1
 
+      # versionCode/versionName come from the release tag automatically
+      # (vMAJOR.MINOR.PATCH). versionCode = major*1000000 + minor*1000 + patch,
+      # exported as VERSION_CODE/VERSION_NAME for the gradle build below.
+      - name: Compute version from tag
+        if: github.event.release.tag_name != '' || inputs.tag != ''
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TAG" ]; then
+            echo "TAG is empty; skipping version stamping."
+            exit 0
+          fi
+          VERSION="${TAG#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          if ! [[ "$MAJOR" =~ ^[0-9]+$ ]] || ! [[ "$MINOR" =~ ^[0-9]+$ ]] || ! [[ "$PATCH" =~ ^[0-9]+$ ]]; then
+            echo "Tag '$TAG' does not parse as vMAJOR.MINOR.PATCH."
+            echo "Please tag releases as vMAJOR.MINOR.PATCH (e.g. v0.2.0)."
+            exit 1
+          fi
+          VERSION_CODE=$(( MAJOR * 1000000 + MINOR * 1000 + PATCH ))
+          VERSION_NAME="$VERSION"
+          echo "Computed versionCode=$VERSION_CODE versionName=$VERSION_NAME from tag $TAG"
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -84,11 +113,11 @@ jobs:
             echo "KEYSTORE_FILE=$KEYSTORE_FILE" >> "$GITHUB_ENV"
             echo "Release keystore decoded — APK will be release-signed."
             ./gradlew assembleRelease
-            echo "APK_PATH=app/build/outputs/apk/release/app-release.apk" >> "$GITHUB_ENV"
+            echo "APK_PATH=app/build/outputs/apk/release/konmin-${VERSION_NAME}-release.apk" >> "$GITHUB_ENV"
           else
             echo "No KEYSTORE_BASE64 secret — building debug-signed APK."
             ./gradlew assembleDebug
-            echo "APK_PATH=app/build/outputs/apk/debug/app-debug.apk" >> "$GITHUB_ENV"
+            echo "APK_PATH=app/build/outputs/apk/debug/konmin-${VERSION_NAME}-debug.apk" >> "$GITHUB_ENV"
           fi
 
       - name: Upload APK to release

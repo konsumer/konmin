@@ -7,7 +7,7 @@
 const manifest = {
   id: 'weather',
   name: 'Weather',
-  description: 'Current temperature and conditions for your location.',
+  description: "Today's high and low, with conditions.",
   intervalMinutes: 60,
   maxHeightUnits: 3,
   // Marks this as expensive, so the launcher throttles it much harder when
@@ -17,30 +17,28 @@ const manifest = {
   domains: ['api.open-meteo.com']
 }
 
-// https://open-meteo.com/en/docs -- WMO weather codes
-const CONDITIONS = {
-  0: 'clear',
-  1: 'mostly clear',
-  2: 'partly cloudy',
-  3: 'overcast',
-  45: 'fog',
-  48: 'freezing fog',
-  51: 'light drizzle',
-  53: 'drizzle',
-  55: 'heavy drizzle',
-  61: 'light rain',
-  63: 'rain',
-  65: 'heavy rain',
-  71: 'light snow',
-  73: 'snow',
-  75: 'heavy snow',
-  80: 'showers',
-  81: 'showers',
-  82: 'heavy showers',
-  95: 'thunderstorm',
-  96: 'thunderstorm with hail',
-  99: 'thunderstorm with hail'
-}
+// https://open-meteo.com/en/docs -- WMO weather codes, mapped to a small
+// set of emoji so the widget stays to one line.
+const EMOJI = (() => {
+  const lookup = {
+    0: '☀️', // clear
+    1: '☀️', // mostly clear
+    2: '⛅', // partly cloudy
+    3: '☁️', // overcast
+    45: '🌫️', // fog
+    48: '🌫️', // freezing fog
+    95: '⛈️', // thunderstorm
+    96: '⛈️', // thunderstorm with hail
+    99: '⛈️' // thunderstorm with hail
+  }
+  const drizzle = [51, 53, 55] // light drizzle .. heavy drizzle
+  const rain = [61, 63, 65, 80, 81, 82] // light rain .. heavy showers
+  const snow = [71, 73, 75] // light snow .. heavy snow
+  for (const code of drizzle) lookup[code] = '🌧️'
+  for (const code of rain) lookup[code] = '🌧️'
+  for (const code of snow) lookup[code] = '❄️'
+  return code => lookup[code] || '❔'
+})()
 
 async function render (ctx) {
   // Coarse location only, and only a last-known fix -- this never turns the
@@ -60,7 +58,7 @@ async function render (ctx) {
 
   const url = 'https://api.open-meteo.com/v1/forecast' +
     `?latitude=${place.lat}&longitude=${place.lon}` +
-    '&current=temperature_2m,weather_code' +
+    '&current=weather_code' +
     '&daily=temperature_2m_max,temperature_2m_min' +
     '&forecast_days=1&timezone=auto'
 
@@ -69,17 +67,14 @@ async function render (ctx) {
   // once every 30 minutes.
   const data = JSON.parse(await ctx.fetch(url, { cacheMinutes: 30 }))
 
-  const temp = Math.round(data.current.temperature_2m)
   const unit = data.current_units.temperature_2m
-  const condition = CONDITIONS[data.current.weather_code] || 'unknown'
+  const emoji = EMOJI(data.current.weather_code)
   const high = Math.round(data.daily.temperature_2m_max[0])
   const low = Math.round(data.daily.temperature_2m_min[0])
 
   return {
     lines: [
-      { text: `${temp}${unit}`, size: 1, weight: 1 },
-      { text: condition, size: -1 },
-      { text: `${high}${unit} / ${low}${unit}`, size: -2 }
+      { text: `${high}${unit} / ${low}${unit}  ${emoji}`, size: 1, weight: 1 }
     ],
     nextCheckMinutes: 60
   }

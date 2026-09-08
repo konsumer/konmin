@@ -35,7 +35,7 @@ The Gradle wrapper is checked in, so no Gradle install is needed. `ANDROID_HOME`
 ## Building
 
 ```bash
-./gradlew assembleDebug     # APK at app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleDebug     # APK at app/build/outputs/apk/debug/konmin-<versionName>-debug.apk
 ./gradlew assembleRelease
 ./gradlew installDebug      # build and install to the connected device
 ```
