@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive-icon foreground: a "k" drawn as vector paths, so the whole icon
+     set is text and needs no density-specific PNGs. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- upright stem -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,30 h8 v48 h-8 z" />
+    <!-- upper diagonal -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M69.5,44.2 l5.7,5.7 -20.5,20.5 -5.7,-5.7 z" />
+    <!-- lower diagonal -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54.7,58.1 l5.7,-5.7 15.3,15.3 -5.7,5.7 z" />
+</vector>
