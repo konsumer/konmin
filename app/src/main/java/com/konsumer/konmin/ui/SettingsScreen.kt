@@ -12,6 +12,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,9 +79,21 @@ private val GLOW_PRESETS = listOf(
     0xFF1A237E.toInt(), 0xFF4A148C.toInt(), 0xFF3E2723.toInt()
 )
 
-private val BG_PRESETS = listOf(
-    0x00000000, 0x66000000, 0xCC000000.toInt(), 0xFF000000.toInt(),
-    0x66FFFFFF, 0xCCFFFFFF.toInt(), 0xFFFFFFFF.toInt()
+/** The transparent value that means "show the system wallpaper". */
+private const val WALLPAPER_BG = 0x00000000
+
+/**
+ * Flat colors the home screen is painted when the wallpaper is off — all
+ * fully opaque, since anything translucent is a wallpaper overlay. The name
+ * pairs each swatch with its accessibility label.
+ */
+private val BG_SOLIDS = listOf(
+    0xFF000000.toInt() to "black",
+    0xFF212121.toInt() to "dark grey",
+    0xFF424242.toInt() to "grey",
+    0xFF1A237E.toInt() to "navy",
+    0xFFE0E0E0.toInt() to "light grey",
+    0xFFFFFFFF.toInt() to "white"
 )
 
 @Composable
@@ -206,12 +222,31 @@ fun SettingsScreen(
 
         item {
             Label("background", fgColor, baseSizeSp)
-            SwatchRow(
-                colors = BG_PRESETS,
-                selected = settings.bgColorArgb,
+            Text(
+                text = "system wallpaper, or a plain solid color",
+                color = fgColor.copy(alpha = 0.45f),
+                fontSize = (baseSizeSp * 0.72f).sp
+            )
+            Spacer(Modifier.height(6.dp))
+            BackgroundChoiceRow(
+                selectedBg = settings.bgColorArgb,
                 fgColor = fgColor,
+                baseSizeSp = baseSizeSp,
                 onPick = { picked ->
-                    scope.launch { settingsRepo.setColors(fg = settings.fgColorArgb, bg = picked) }
+                    scope.launch {
+                        if (picked == WALLPAPER_BG) {
+                            // Wallpaper shows again; leave the user's accent
+                            // choice alone — only a solid color makes the
+                            // wallpaper-derived accent meaningless.
+                            settingsRepo.setColors(fg = settings.fgColorArgb, bg = picked)
+                        } else {
+                            // A solid covers the wallpaper, so an accent read
+                            // from it would be invisible — same implicit stop
+                            // as the manual text-color handler.
+                            settingsRepo.setAutoAccent(false)
+                            settingsRepo.setColors(fg = settings.fgColorArgb, bg = picked)
+                        }
+                    }
                 }
             )
         }
@@ -747,6 +782,61 @@ private fun SwatchRow(
                         shape = CircleShape
                     )
                     .clickable { onPick(argb) }
+            )
+        }
+    }
+}
+
+/**
+ * The home-screen background choice: the system wallpaper or one flat
+ * color. "wallpaper" is a labeled chip — a transparent swatch would be
+ * invisible — followed by the opaque solids. A swatch that isn't in the
+ * solid set (e.g. a translucent scrim left over from an older build) is
+ * rendered as wallpaper mode, so it highlights the wallpaper chip.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun BackgroundChoiceRow(
+    selectedBg: Int,
+    fgColor: Color,
+    baseSizeSp: Float,
+    onPick: (Int) -> Unit
+) {
+    // Wallpaper shows for any non-opaque value, including legacy
+    // translucent scrims; only a fully opaque bg is solid mode.
+    val wallpaperMode = (selectedBg ushr 24) != 0xFF
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            text = "wallpaper",
+            color = if (wallpaperMode) fgColor else fgColor.copy(alpha = 0.5f),
+            fontSize = (baseSizeSp * 0.8f).sp,
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .border(
+                    width = if (wallpaperMode) 2.dp else 1.dp,
+                    color = if (wallpaperMode) fgColor else fgColor.copy(alpha = 0.35f),
+                    shape = RoundedCornerShape(6.dp)
+                )
+                .clickable { onPick(WALLPAPER_BG) }
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+        )
+        BG_SOLIDS.forEach { (argb, name) ->
+            val selected = argb == selectedBg
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .background(Color(argb))
+                    .border(
+                        width = if (selected) 2.dp else 1.dp,
+                        color = if (selected) fgColor else fgColor.copy(alpha = 0.35f),
+                        shape = CircleShape
+                    )
+                    .clickable { onPick(argb) }
+                    .semantics { contentDescription = "$name background" }
             )
         }
     }

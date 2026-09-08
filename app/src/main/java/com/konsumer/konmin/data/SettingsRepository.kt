@@ -31,6 +31,18 @@ enum class SettingsAccess {
 data class ThemeSettings(
     val autoAccentFromWallpaper: Boolean = true,
     val fgColorArgb: Int = 0xFFFFFFFF.toInt(),
+    /**
+     * The home-screen background: wallpaper mode or a plain solid color.
+     * A fully transparent value (alpha 0, e.g. 0x00000000) is wallpaper
+     * mode — the window requests FLAG_SHOW_WALLPAPER and the launcher
+     * draws nothing, so the system wallpaper (live or static) shows
+     * through. A fully opaque value (alpha 0xFF) is solid mode — the
+     * window must not render the wallpaper and the launcher paints the
+     * whole screen that color. Any alpha in between is treated as
+     * wallpaper mode (wallpaper shows, overlaid) so translucent scrims
+     * stored before solid colors existed still behave; only alpha == 0xFF
+     * triggers solid mode.
+     */
     val bgColorArgb: Int = 0x00000000,
     /**
      * Halo drawn behind text, for legibility over a busy wallpaper without

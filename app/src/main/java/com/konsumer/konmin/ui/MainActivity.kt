@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -130,6 +131,19 @@ class MainActivity : ComponentActivity() {
                 applyStatusBarVisibility(settings.hideStatusBar)
             }
 
+            // Solid backgrounds must suppress the system wallpaper at the
+            // window level (not merely cover it), and wallpaper mode must
+            // ask for it again. The theme starts FLAG_SHOW_WALLPAPER set, so
+            // this toggles it from the observed settings instead of relying
+            // on the static style. LifecycleResumeEffect re-applies on every
+            // resume too (returning to the launcher, coming back from the
+            // wallpaper picker), not just when the value changes.
+            val bgOpaque = (settings.bgColorArgb ushr 24) == 0xFF
+            LifecycleResumeEffect(bgOpaque) {
+                applyWallpaperMode(bgOpaque)
+                onPauseOrDispose { }
+            }
+
             // System back closes settings rather than leaving the launcher.
             BackHandler(enabled = showSettings) { showSettings = false }
 
@@ -201,6 +215,22 @@ class MainActivity : ComponentActivity() {
                 onSuccess = { "removed $id" },
                 onFailure = { it.message ?: "could not remove $id" }
             )
+        }
+    }
+
+    /**
+     * Drives [WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER] from the
+     * current background setting. Wallpaper mode (transparent bg) keeps the
+     * flag so the system wallpaper — live or static — renders behind the
+     * launcher, which draws nothing. Solid mode (opaque bg) clears it so no
+     * wallpaper is rendered at all; the launcher's own opaque paint fills
+     * the screen instead.
+     */
+    private fun applyWallpaperMode(bgOpaque: Boolean) {
+        if (bgOpaque) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+        } else {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
         }
     }
 
