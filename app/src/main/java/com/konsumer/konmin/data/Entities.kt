@@ -23,7 +23,6 @@ data class WidgetConfig(
     val manifestIntervalMinutes: Int = 30,    // fallback cadence if plugin gives no hint
     val lastCheckedAt: Long = 0L,
     val nextDueAt: Long = 0L,                 // epoch millis; tick worker only runs widgets past this
-    val cacheUntil: Long = 0L,                // network cache expiry (separate from render cadence)
     val lastRenderedLinesJson: String? = null, // cached last-good output, shown if a check fails
     val networkHeavy: Boolean = false,         // throttled harder under Battery Saver
     val lastError: String? = null              // surfaced in settings so a broken plugin is visible

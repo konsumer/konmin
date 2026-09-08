@@ -9,13 +9,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.intOrNull
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
@@ -307,7 +303,11 @@ class QuickJsPluginEngine(
             return Result.failure(PluginException("returned nothing"))
         }
         return runCatching {
-            val root = json.parseToJsonElement(outJson) as? JsonObject
+            // Guarded non-null above: isEmptyResult() already returned for
+            // null/blank. The extension has no contract, so the compiler can't
+            // smart-cast — assert it once here instead of repeating the check.
+            val payload = requireNotNull(outJson) { "render() returned nothing" }
+            val root = json.parseToJsonElement(payload) as? JsonObject
                 ?: throw PluginException("render() must return an object")
 
             val lines = (root["lines"] as? JsonArray).orEmpty().mapNotNull { element ->
@@ -383,11 +383,6 @@ class QuickJsPluginEngine(
 
         val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
-        /**
-         * Kicks off render() and parks the settled value on a global the host
-         * reads back. JSON.stringify keeps the JS->Kotlin boundary to a single
-         * string, so we never walk an untrusted object graph across JNI.
-         */
         /**
          * Wiring for ctx.clicked. Set as a JSON string and parsed here, for
          * the same reason results come back as JSON — one string across JNI

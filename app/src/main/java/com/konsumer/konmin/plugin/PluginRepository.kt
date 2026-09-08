@@ -3,6 +3,7 @@ package com.konsumer.konmin.plugin
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.konsumer.konmin.data.AppDatabase
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -83,7 +84,9 @@ class PluginRepository(private val context: Context) {
     }
 
     /**
-     * Removes a user-installed plugin.
+     * Removes a user-installed plugin: its source and cached manifest files,
+     * plus every row it owns in the per-plugin storage and http-cache tables,
+     * so a later reinstall of the same id doesn't resurrect stale state.
      *
      * Bundled examples are deliberately not removable — they're the API
      * documentation, and a user who deletes one has no obvious way back
@@ -91,10 +94,13 @@ class PluginRepository(private val context: Context) {
      * Disabling one costs nothing and leaves the source in place to read.
      * Enforced here rather than only in the UI so no caller can strand them.
      */
-    fun uninstall(id: String): Result<Unit> = runCatching {
+    suspend fun uninstall(id: String): Result<Unit> = runCatching {
         require(!isBundled(id)) {
             "$id is a bundled example — disable it instead of removing it"
         }
+        val db = AppDatabase.get(context)
+        db.pluginStorageDao().clearPlugin(id)
+        db.httpCacheDao().deleteForPlugin(id)
         sourceFile(id).delete()
         manifestFile(id).delete()
     }

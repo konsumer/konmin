@@ -1,0 +1,79 @@
+# Release build workflow
+#
+# Fires automatically when a version tag (e.g. v0.1.0) is pushed, OR can be
+# run manually (workflow_dispatch) to build for an already-published release.
+#
+# To trigger it, create and push a tag:
+#   git tag v0.1.0 && git push origin v0.1.0
+# (Or, in the GitHub UI, draft a Release from a tag named like v0.1.0.)
+#
+# Release signing:
+# The released APK carries a STABLE signature across releases so users can
+# upgrade in place. That signature comes from a release keystore supplied as a
+# GitHub Actions secret.
+#
+# Secrets consumed (set in the repo's Actions secrets):
+#   KEYSTORE_BASE64   - base64-encoded release keystore file
+#   KEYSTORE_PASSWORD - keystore password
+#   KEY_ALIAS         - key alias inside the keystore
+#   KEY_PASSWORD      - key password for that alias
+#
+# If KEYSTORE_BASE64 is present, the keystore is decoded into $RUNNER_TEMP and
+# the gradle build signs a release APK (assembleRelease), which is uploaded.
+# If the secret is absent (or blank), the build falls back to a debug-signed
+# APK (assembleDebug), which is uploaded instead. No keystore material is ever
+# committed to the repository.
+
+name: Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build release (or debug) APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -n "${KEYSTORE_BASE64}" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+            export KEYSTORE_FILE="$RUNNER_TEMP/release.keystore"
+            export KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD
+            echo "KEYSTORE_FILE=$KEYSTORE_FILE" >> "$GITHUB_ENV"
+            echo "Release keystore decoded — APK will be release-signed."
+            ./gradlew assembleRelease
+            echo "APK_PATH=app/build/outputs/apk/release/app-release.apk" >> "$GITHUB_ENV"
+          else
+            echo "No KEYSTORE_BASE64 secret — building debug-signed APK."
+            ./gradlew assembleDebug
+            echo "APK_PATH=app/build/outputs/apk/debug/app-debug.apk" >> "$GITHUB_ENV"
+          fi
+
+      - name: Upload APK to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.APK_PATH }}

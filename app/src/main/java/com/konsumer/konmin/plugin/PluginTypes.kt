@@ -19,8 +19,9 @@ data class Line(
 enum class LineAlign { START, CENTER, END }
 
 /**
- * What a plugin's render() returns. Total visual height is derived from
- * summing each line's size multiplier — see LayoutMath.heightUnits().
+ * What a plugin's render() returns. Total visual height is the sum of each
+ * line's size multiplier; lines past the widget's budget are dropped by
+ * LayoutMath.truncateToFit().
  * nextCheckMinutes lets the plugin self-report its own next cadence
  * (e.g. weather says "ask again in 60"), overriding the manifest default
  * for one cycle. Host clamps this to a sane floor/ceiling.
@@ -80,9 +81,6 @@ object LayoutMath {
     val SIZE_MULTIPLIERS = mapOf(-2 to 0.70f, -1 to 0.85f, 0 to 1.00f, 1 to 1.15f, 2 to 1.30f)
 
     fun clampSize(size: Int): Int = size.coerceIn(-2, 2)
-
-    fun heightUnits(lines: List<Line>): Float =
-        lines.sumOf { SIZE_MULTIPLIERS.getValue(clampSize(it.size)).toDouble() }.toFloat()
 
     /**
      * Truncate a plugin's lines to fit its allotted height budget.

@@ -1,3 +1,5 @@
+import java.io.File
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,6 +7,19 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
 }
+
+// Release signing is conditional: it activates only when a keystore is fully
+// configured via environment variables AND the keystore file actually exists.
+// GitHub Actions passes absent secrets through as empty strings (not null), so
+// blank values are treated as absent here. When the keys/keystore are missing,
+// the release buildType is left unsigned (its existing behavior), so local
+// builds and CI without the secret still produce a working unsigned release APK.
+val keystoreFile = System.getenv("KEYSTORE_FILE")
+val hasReleaseKey = !keystoreFile.isNullOrBlank() &&
+    !System.getenv("KEYSTORE_PASSWORD").isNullOrBlank() &&
+    !System.getenv("KEY_ALIAS").isNullOrBlank() &&
+    !System.getenv("KEY_PASSWORD").isNullOrBlank() &&
+    File(keystoreFile).isFile
 
 android {
     namespace = "com.konsumer.konmin"
@@ -31,9 +46,22 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                storeFile = File(keystoreFile!!)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (hasReleaseKey) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }
@@ -42,7 +70,6 @@ dependencies {
     // Compose
     implementation(platform("androidx.compose:compose-bom:2024.10.01"))
     implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.3")

@@ -68,9 +68,6 @@ interface WidgetConfigDao {
     @Query("SELECT * FROM widget_configs WHERE enabled = 1 AND nextDueAt <= :now")
     suspend fun getDue(now: Long): List<WidgetConfig>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(config: WidgetConfig)
-
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIfAbsent(config: WidgetConfig): Long
 
@@ -105,4 +102,8 @@ interface HttpCacheDao {
 
     @Query("DELETE FROM http_cache WHERE fetchedAt < :before")
     suspend fun evictOlderThan(before: Long)
+
+    /** Remove every cached response for one plugin, used on uninstall. */
+    @Query("DELETE FROM http_cache WHERE pluginId = :pluginId")
+    suspend fun deleteForPlugin(pluginId: String)
 }

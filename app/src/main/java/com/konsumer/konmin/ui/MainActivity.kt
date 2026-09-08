@@ -317,8 +317,9 @@ private fun KonminRoot(
                 if (hideStatusBar) Modifier.navigationBarsPadding() else Modifier.systemBarsPadding()
             )
             // Long-press anywhere that isn't an app row opens settings — the
-            // conventional launcher gesture, and the only entry point, since
-            // there's deliberately no settings icon cluttering the home screen.
+            // conventional launcher gesture. The gear on the app-list row is
+            // the alternative entry point; either or both are offered per the
+            // user's "open settings with" choice.
             .then(
                 if (settings.settingsAccess.allowsLongPress) {
                     Modifier.combinedClickable(
