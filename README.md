@@ -2,7 +2,7 @@
 
 konmin is a minimal home-screen launcher for Android. The home screen is a stack of small text widgets at the top and a plain list of your apps below. No icons, no buttons, no clutter. Your wallpaper shows through the whole screen.
 
-![konmin home screen](docs/screenshot.png)
+<img alt="screenshot" width="50%" src="docs/screenshot.png" />
 
 ## Install
 
