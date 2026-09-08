@@ -1,5 +1,11 @@
 package com.konsumer.konmin.ui
 
+import android.app.Activity
+import android.app.WallpaperManager
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -95,6 +102,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val configs by widgetConfigDao.getAll().collectAsState(initial = emptyList())
     val allApps by appDao.getAllApps().collectAsState(initial = emptyList())
@@ -151,6 +159,32 @@ fun SettingsScreen(
                 baseSizeSp = baseSizeSp,
                 onChange = { scope.launch { settingsRepo.setAutoAccent(it) } }
             )
+        }
+
+        item {
+            // Just opens the OS picker — the wallpaper stays the system's, so
+            // konmin bundles none and only ever reads what the OS supplies.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { openWallpaperPicker(context) }
+                    .padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("set wallpaper", color = fgColor, fontSize = baseSizeSp.sp)
+                    Text(
+                        "opens the system wallpaper picker",
+                        color = fgColor.copy(alpha = 0.45f),
+                        fontSize = (baseSizeSp * 0.72f).sp
+                    )
+                }
+                Text(
+                    "»",
+                    color = fgColor.copy(alpha = 0.45f),
+                    fontSize = baseSizeSp.sp
+                )
+            }
         }
 
         item {
@@ -751,4 +785,30 @@ private fun sortLabel(order: SortOrder): String = when (order) {
     SortOrder.ALPHA -> "a-z"
     SortOrder.RECENT -> "recent"
     SortOrder.MOST_USED -> "most used"
+}
+
+/**
+ * Best-effort open of the OS wallpaper chooser. There is no one public API
+ * across Android versions, so try the static-wallpaper picker first and fall
+ * back to the live-wallpaper chooser, which some builds hide the static one
+ * behind. From an Activity (settings is shown inside MainActivity) the picker
+ * hands control straight back, so no NEW_TASK is needed; only add it when all
+ * we have is an application context.
+ */
+private fun openWallpaperPicker(context: Context) {
+    val candidates = listOf(
+        Intent(Intent.ACTION_SET_WALLPAPER),
+        Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
+    )
+    val picker = candidates.firstOrNull { it.resolveActivity(context.packageManager) != null }
+    if (picker == null) {
+        Toast.makeText(context, "no wallpaper picker found", Toast.LENGTH_SHORT).show()
+        return
+    }
+    if (context !is Activity) picker.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    try {
+        context.startActivity(picker)
+    } catch (_: ActivityNotFoundException) {
+        Toast.makeText(context, "no wallpaper picker found", Toast.LENGTH_SHORT).show()
+    }
 }
