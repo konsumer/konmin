@@ -1,11 +1,15 @@
 # Release build workflow
 #
-# Fires automatically when a version tag (e.g. v0.1.0) is pushed, OR can be
-# run manually (workflow_dispatch) to build for an already-published release.
+# Runs when a GitHub Release is published: the APK is built from the release
+# tag and auto-attached to that release.
 #
-# To trigger it, create and push a tag:
-#   git tag v0.1.0 && git push origin v0.1.0
-# (Or, in the GitHub UI, draft a Release from a tag named like v0.1.0.)
+# It can also be run manually (workflow_dispatch) with the "tag" input set to
+# an already-published release tag: the workflow checks out that tag, builds
+# the released source, and attaches the APK to that existing release. A manual
+# run without the tag input fails fast with instructions.
+#
+# Note: the workflow file must live on the default branch for the release
+# trigger (release: types: [published]) to fire.
 #
 # Release signing:
 # The released APK carries a STABLE signature across releases so users can
@@ -27,10 +31,14 @@
 name: Release APK
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to attach the APK to (manual rebuild)
+        required: false
+        type: string
 
 jobs:
   build:
@@ -41,6 +49,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - name: "Guard: manual run requires a tag input"
+        if: github.event_name == 'workflow_dispatch' && inputs.tag == ''
+        run: |
+          echo "Manual (workflow_dispatch) run started without a tag input."
+          echo "Supply the 'tag' input naming an already-published release tag"
+          echo "(e.g. v0.1.0) so the workflow can attach the rebuilt APK to it."
+          exit 1
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -76,4 +94,5 @@ jobs:
       - name: Upload APK to release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.release.tag_name || inputs.tag }}
           files: ${{ env.APK_PATH }}
