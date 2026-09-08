@@ -53,7 +53,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Presets rather than a full colour wheel — this is a minimal launcher. */
+/** Presets rather than a full color wheel — this is a minimal launcher. */
 private val FG_PRESETS = listOf(
     0xFFFFFFFF, 0xFFE0E0E0, 0xFF9E9E9E, 0xFF000000,
     0xFFEF5350, 0xFFFFB74D, 0xFF66BB6A, 0xFF42A5F5, 0xFFAB47BC
@@ -145,7 +145,7 @@ fun SettingsScreen(
         item {
             ToggleRow(
                 label = "accent from wallpaper",
-                subtitle = "picks a readable text colour from your wallpaper",
+                subtitle = "picks a readable text color from your wallpaper",
                 checked = settings.autoAccentFromWallpaper,
                 fgColor = fgColor,
                 baseSizeSp = baseSizeSp,
@@ -154,14 +154,14 @@ fun SettingsScreen(
         }
 
         item {
-            Label("text colour", fgColor, baseSizeSp)
+            Label("text color", fgColor, baseSizeSp)
             SwatchRow(
                 colors = FG_PRESETS,
                 selected = settings.fgColorArgb,
                 fgColor = fgColor,
                 onPick = { picked ->
                     scope.launch {
-                        // Choosing a colour by hand is an implicit "stop
+                        // Choosing a color by hand is an implicit "stop
                         // overwriting it from the wallpaper".
                         settingsRepo.setAutoAccent(false)
                         settingsRepo.setColors(fg = picked, bg = settings.bgColorArgb)
@@ -554,7 +554,7 @@ private fun WidgetRow(
                         activeTrackColor = fgColor.copy(alpha = 0.6f),
                         inactiveTrackColor = fgColor.copy(alpha = 0.2f),
                         // Ticks default to the M3 primary, which is a purple
-                        // that has nothing to do with the user's chosen colour.
+                        // that has nothing to do with the user's chosen color.
                         activeTickColor = Color.Transparent,
                         inactiveTickColor = Color.Transparent
                     ),

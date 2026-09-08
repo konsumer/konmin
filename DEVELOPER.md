@@ -133,7 +133,7 @@ A fresh plugin id starts disabled and only becomes visible after the relaunch. R
 | `worker/ForegroundTicker.kt` | the 20s on-screen ticker, bound to the RESUMED lifecycle |
 | `worker/WidgetRenderer.kt` | render, truncate, cache, schedule the next check |
 | `ui/` | `MainActivity`, widget stack, app list, settings, text glow |
-| `theme/WallpaperAccent.kt` | wallpaper accent colour extraction |
+| `theme/WallpaperAccent.kt` | wallpaper accent color extraction |
 | `LauncherApp.kt` | application entry point |
 
 ## How it stays cheap

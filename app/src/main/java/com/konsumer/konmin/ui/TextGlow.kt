@@ -58,7 +58,7 @@ fun GlowText(
     }
 
     // The two passes must lay out identically or the outline drifts off the
-    // glyphs, so they differ only in colour and draw style.
+    // glyphs, so they differ only in color and draw style.
     val inner = if (fillWidth) Modifier.fillMaxWidth() else Modifier
     Box(modifier = modifier) {
         Text(

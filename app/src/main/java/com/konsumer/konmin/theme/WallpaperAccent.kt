@@ -19,12 +19,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Derives the launcher's foreground colour from the current wallpaper.
+ * Derives the launcher's foreground color from the current wallpaper.
  *
  * Only the foreground is set — the background stays transparent so the
  * wallpaper shows through, which is the whole point of a launcher like
  * this. The chosen swatch is pushed away from the wallpaper's dominant
- * colour and forced to a readable luminance, since a palette swatch picked
+ * color and forced to a readable luminance, since a palette swatch picked
  * purely for prominence is very often unreadable against the thing it
  * was picked from.
  */
@@ -38,7 +38,7 @@ object WallpaperAccent {
 
         // READ_EXTERNAL_STORAGE gates getDrawable() on some OS versions; on
         // others it needs no permission at all. Either way, a refused read is
-        // a no-op, not a crash — the user's manual colour stays.
+        // a no-op, not a crash — the user's manual color stays.
         val drawable = withContext(Dispatchers.IO) {
             runCatching { WallpaperManager.getInstance(context).drawable }.getOrNull()
         } ?: return

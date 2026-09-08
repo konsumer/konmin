@@ -1,6 +1,6 @@
 <resources>
     <!-- Transparent window over the live wallpaper: the launcher's background
-         colour is drawn by Compose from the user's setting, so a fully
+         color is drawn by Compose from the user's setting, so a fully
          transparent bg (the default) shows the wallpaper through. -->
     <style name="Theme.Konmin" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>

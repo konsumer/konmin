@@ -24,7 +24,7 @@ Uninstall it like any other app. Open Settings, then Apps, then konmin, then Uni
 - Settings: long-press the widget area, or tap the gear icon beside the search field. The option named open settings with decides which of these works.
 - Widgets: turn each one on or off, change the order, and adjust its height. Add your own plugin with add plugin (.js). Plugins you added can be removed; the bundled examples can only be disabled.
 - Apps: hide the apps you never use, pick the sort order, and turn the search box on or off.
-- Theme: text and background colours, text size, an optional accent colour from your wallpaper, an optional text glow, and hiding the status bar.
+- Theme: text and background colors, text size, an optional accent color from your wallpaper, an optional text glow, and hiding the status bar.
 
 ## Widgets
 

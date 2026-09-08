@@ -161,7 +161,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Recompute here as well as from the wallpaper-changed broadcast: on
         // Android 8+ the broadcast doesn't always reach a manifest receiver,
-        // and returning to the home screen is exactly when a stale colour
+        // and returning to the home screen is exactly when a stale color
         // would be noticed.
         lifecycleScope.launch {
             runCatching { WallpaperAccent.refresh(applicationContext, settingsRepo) }

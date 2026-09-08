@@ -54,7 +54,7 @@ data class ThemeSettings(
     val textSize: TextSizeOption = TextSizeOption.MEDIUM,
     val sortOrder: SortOrder = SortOrder.ALPHA
 ) {
-    /** Alpha, not the colour, is what switches the halo on. */
+    /** Alpha, not the color, is what switches the halo on. */
     val glowEnabled: Boolean get() = (glowColorArgb ushr 24) != 0 && glowRadius > 0f
 }
 
